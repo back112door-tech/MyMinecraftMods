@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Minecraft Mods Repository</title>
-
-    <!-- خطوط الـ System Terminal / Glitch -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Fira+Code:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- مكتبة Socket.io للعب الفوري -->
+    <script src="/socket.io/socket.io.js"></script>
 
     <style>
         :root {
@@ -34,7 +35,6 @@
             box-sizing: border-box;
         }
 
-        /* خطوط الشاشة Scanlines */
         body::after {
             content: '';
             position: fixed;
@@ -59,7 +59,6 @@
             text-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
         }
 
-        /* خلفية الـ GIFs المنفصلة لتجنب التجميد */
         .bg-overlay {
             position: fixed;
             top: 0;
@@ -82,9 +81,7 @@
             filter: contrast(130%) sepia(30%) hue-rotate(-15deg);
         }
 
-        .bg-gif.active {
-            opacity: 0.28;
-        }
+        .bg-gif.active { opacity: 0.28; }
 
         .bg-overlay::after {
             content: '';
@@ -94,7 +91,6 @@
             z-index: 1;
         }
 
-        /* شاشة الزر الأول عند دخول الموقع لأول مرة */
         #launchScreen {
             position: fixed;
             inset: 0;
@@ -128,7 +124,25 @@
             transform: scale(1.05);
         }
 
-        .container { max-width: 880px; margin: 0 auto; padding: 40px 20px 80px 20px; position: relative; z-index: 2; }
+        /* الهيكل الداخلي لقسم الكاتيجوريز والميني جيمز */
+        .layout-wrapper {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px 80px 20px;
+            gap: 25px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .mini-games-sidebar {
+            width: 240px;
+            flex-shrink: 0;
+        }
+
+        .main-content {
+            flex-grow: 1;
+        }
         
         .soft-card { 
             background: var(--card-bg); 
@@ -136,53 +150,40 @@
             border: 1px solid rgba(220, 38, 38, 0.3); 
             border-left: 3px solid var(--blood-red);
             border-radius: 2px; 
-            padding: 30px; 
+            padding: 25px; 
             margin-bottom: 25px; 
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(220, 38, 38, 0.08); 
             transition: all 0.2s ease; 
-        }
-
-        .soft-card:hover {
-            border-color: var(--blood-red);
-            box-shadow: 0 0 20px var(--blood-glow);
         }
 
         .login-box { 
             text-align: center; 
             max-width: 420px; 
             margin: 80px auto 0 auto; 
-            animation: fadeInUp 0.6s ease-out; 
             border: 1px solid var(--blood-red);
             box-shadow: 0 0 25px var(--blood-glow);
+            position: relative;
+            z-index: 2;
         }
-
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         input[type="text"] { 
             background: rgba(5, 3, 3, 0.9); 
             border: 1px solid rgba(220, 38, 38, 0.5); 
             color: var(--flesh-tint); 
-            padding: 14px 18px; 
-            border-radius: 0px; 
+            padding: 12px 14px; 
             outline: none; 
             width: 100%; 
             box-sizing: border-box; 
             font-family: var(--font-code);
-            font-size: 14px;
-        }
-
-        input[type="text"]:focus { 
-            border-color: var(--blood-red); 
-            box-shadow: 0 0 12px var(--blood-glow); 
+            font-size: 13px;
         }
 
         .btn { 
             font-family: var(--font-term);
             font-weight: 700;
-            padding: 12px 22px; 
-            border-radius: 0px; 
+            padding: 10px 20px; 
             border: 1px solid transparent; 
-            font-size: 13px; 
+            font-size: 12px; 
             cursor: pointer; 
             transition: all 0.2s ease; 
             display: inline-flex; 
@@ -198,22 +199,12 @@
             border: 1px solid var(--blood-red);
         }
 
-        .btn-green:hover {
-            background: var(--blood-red);
-            color: #000;
-            box-shadow: 0 0 15px var(--blood-glow);
-        }
+        .btn-green:hover { background: var(--blood-red); color: #000; }
 
         .btn-blue { 
             background: rgba(255, 255, 255, 0.05); 
             color: var(--flesh-tint); 
             border: 1px solid rgba(216, 180, 166, 0.4);
-            text-decoration: none; 
-        }
-
-        .btn-blue:hover {
-            background: var(--flesh-tint);
-            color: #000;
         }
 
         .btn-red { 
@@ -222,27 +213,73 @@
             border: 1px solid var(--critical-red); 
         }
 
-        .btn-red:hover { 
-            background: var(--critical-red); 
-            color: #000; 
-            box-shadow: 0 0 15px var(--blood-glow);
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+            gap: 20px; 
         }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 20px; }
-        .cat-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(220, 38, 38, 0.3); padding-bottom: 10px; }
+        .cat-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid rgba(220, 38, 38, 0.3); 
+            padding-bottom: 10px; 
+        }
         
         .mod-item { 
             background: rgba(5, 3, 3, 0.8); 
             border: 1px solid rgba(220, 38, 38, 0.2); 
             padding: 12px 16px; 
-            border-radius: 0px; 
             margin: 8px 0; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
         }
 
-        .user-tag { font-size: 11px; color: var(--text-muted); font-family: var(--font-term); }
+        .user-tag { font-size: 11px; color: var(--text-muted); }
+
+        .volume-control-box {
+            position: fixed;
+            bottom: 35px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(11, 7, 7, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--blood-red);
+            padding: 8px 14px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 0 15px rgba(220, 38, 38, 0.2);
+            font-size: 11px;
+            color: var(--flesh-tint);
+        }
+
+        .volume-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 90px;
+            height: 4px;
+            background: rgba(220, 38, 38, 0.3);
+            border-radius: 2px;
+            outline: none;
+            transition: opacity 0.2s;
+            cursor: pointer;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--blood-red);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--blood-red);
+            transition: transform 0.1s ease;
+        }
 
         .system-footer {
             position: fixed;
@@ -259,43 +296,68 @@
             justify-content: space-between;
             box-sizing: border-box;
         }
+
+        .card-item {
+            background: rgba(15, 8, 8, 0.95);
+            border: 1px solid var(--blood-red);
+            padding: 10px 14px;
+            border-radius: 4px;
+            font-size: 18px;
+            font-family: var(--font-code);
+            color: var(--flesh-tint);
+            box-shadow: 0 0 8px rgba(220, 38, 38, 0.3);
+            min-width: 40px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
 
-    <!-- الصوت الأول: يعمل مرة واحدة فقط وبصوت منخفض -->
-    <audio id="loginAudio" preload="auto">
-        <source src="speech.mp3" type="audio/mpeg">
-    </audio>
+    <audio id="mainAudio" loop preload="auto"><source src="main.mp3" type="audio/mpeg"></audio>
+    <audio id="loginAudio" preload="auto"><source src="speech.mp3" type="audio/mpeg"></audio>
+    <audio id="rumblingAudio" preload="auto"><source src="rumbling.mp3" type="audio/mpeg"></audio>
+    <audio id="erwinAudio" preload="auto"><source src="erwin.mp3" type="audio/mpeg"></audio>
 
-    <!-- الصوت الثاني: الخطاب عند الدخول -->
-    <audio id="rumblingAudio" preload="auto">
-        <source src="rumbling.mp3" type="audio/mpeg">
-    </audio>
+    <div class="volume-control-box">
+        <span>VOL:</span>
+        <input type="range" id="globalVolume" class="volume-slider" min="0" max="1" step="0.01" value="0.7">
+        <span id="volVal" style="font-family: var(--font-code); width: 28px;">70%</span>
+    </div>
 
-    <!-- شاشة البداية الأولى: زر ANALYSIS SYSTEM -->
+    <!-- شاشة البداية הראשونية -->
     <div id="launchScreen">
         <button class="launch-btn" onclick="startAnalysisSystem()">&gt; ANALYSIS SYSTEM</button>
     </div>
 
-    <!-- كروت الـ GIF المتحركة -->
     <div class="bg-overlay">
         <img id="bgGifNormal" class="bg-gif active" src="bg.gif" alt="bg">
         <img id="bgGifArmored" class="bg-gif" src="armored.gif" alt="armored">
     </div>
 
-    <div class="container">
+    <!-- قسم التسجيل متفرد بالمنتصف -->
+    <div id="loginSection" class="soft-card login-box" style="display: none;">
+        <h2 style="margin-top: 0; font-size: 32px;">&gt; Welcome</h2>
+        <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 12px;">Enter username to access mods repository</p>
+        <input type="text" id="usernameInput" placeholder="Enter username..." style="margin-bottom: 18px;">
+        <button class="btn btn-green" style="width: 100%;" onclick="saveUsername()">Enter Platform</button>
+    </div>
+
+    <!-- الهيكل الرئيسي لصفحة الكاتيجوريز وبداخله الحقل الأيسر للـ Mini Games -->
+    <div id="mainSection" class="layout-wrapper" style="display: none;">
         
-        <!-- صفحة تسجيل الـ Username -->
-        <div id="loginSection" class="soft-card login-box" style="display: none;">
-            <h2 style="margin-top: 0; font-size: 32px;">&gt; Welcome</h2>
-            <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 12px;">Enter username to access mods repository</p>
-            <input type="text" id="usernameInput" placeholder="Enter username..." style="margin-bottom: 18px;">
-            <button class="btn btn-green" style="width: 100%;" onclick="saveUsername()">Enter Platform</button>
+        <!-- الحقل الأيسر للـ Mini Games -->
+        <div class="mini-games-sidebar">
+            <div class="soft-card" style="padding: 18px; margin: 0;">
+                <div style="font-weight: bold; color: var(--blood-red); font-size: 13px; margin-bottom: 12px; border-bottom: 1px dashed var(--blood-red); padding-bottom: 5px;">&gt; MINI GAMES</div>
+                <h4 style="margin: 0 0 5px 0; font-size: 14px;">♠ TEXAS HOLD'EM</h4>
+                <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">1v1 Online - Start $100</p>
+                <button id="findMatchBtn" class="btn btn-green" style="width: 100%; font-size: 11px;" onclick="findMatch()">FIND MATCH</button>
+                <div id="matchStatus" style="font-size: 11px; color: var(--blood-red); margin-top: 8px; text-align: center;"></div>
+            </div>
         </div>
 
-        <!-- الصفحة الرئيسية (الكاتيجوريز والمودات) -->
-        <div id="mainSection" style="display: none;">
+        <!-- المنطقة الرئيسية للكاتيجوريز والمودات -->
+        <div class="main-content">
             <div class="soft-card" style="display: flex; justify-content: space-between; align-items: center;">
                 <div>&gt; SYSTEM USER: <b id="currentUserDisplay" style="color: var(--flesh-tint);"></b></div>
                 <button class="btn btn-red" style="font-size: 11px; padding: 6px 14px;" onclick="changeUsername()">Change User</button>
@@ -312,7 +374,36 @@
             <h3 style="font-size: 22px; color: var(--flesh-tint); margin-bottom: 15px;">&gt; Available Categories</h3>
             <div class="grid" id="categoriesArea"></div>
         </div>
+    </div>
 
+    <!-- Poker Modal Overlay -->
+    <div id="pokerBoard" class="soft-card" style="display:none; position: fixed; inset: 40px; z-index: 1000; background: rgba(11, 7, 7, 0.98); border: 2px solid var(--blood-red); box-shadow: 0 0 50px rgba(220, 38, 38, 0.5); overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--blood-red); padding-bottom: 10px;">
+            <h2 style="margin: 0; font-size: 22px;">&gt; TEXAS HOLD'EM POKER</h2>
+            <button class="btn btn-red" style="padding: 4px 10px;" onclick="closePoker()">X</button>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <div style="color: var(--text-muted); font-size: 13px;">OPPONENT: <b id="oppNameDisplay" style="color:var(--flesh-tint);">...</b></div>
+            <div style="font-size: 28px; color: var(--blood-red); margin: 20px 0; text-shadow: 0 0 10px var(--blood-red);">&gt; POT: $<span id="potAmount">0</span> &lt;</div>
+            
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">COMMUNITY CARDS</div>
+            <div id="communityCardsDisplay" style="display: flex; gap: 10px; justify-content: center; min-height: 55px; align-items: center;">
+                <span style="color: var(--text-muted); font-size: 12px;">Waiting for community cards...</span>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; border-top: 1px dashed rgba(220, 38, 38, 0.3); padding-top: 20px;">
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">YOUR HAND</div>
+            <div id="myCardsDisplay" style="display: flex; gap: 12px; justify-content: center; margin-bottom: 15px;"></div>
+            <div style="font-size: 14px;">YOUR CHIPS: <b style="color: #22c55e;">$<span id="myChipsDisplay">100</span></b></div>
+            
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px;">
+                <button class="btn btn-red" onclick="sendPokerAction('fold')">FOLD</button>
+                <button class="btn btn-blue" onclick="sendPokerAction('call')">CHECK / CALL</button>
+                <button class="btn btn-green" onclick="sendPokerAction('raise', 10)">RAISE $10</button>
+            </div>
+        </div>
     </div>
 
     <div class="system-footer">
@@ -321,101 +412,101 @@
     </div>
 
     <script>
-        let currentUser = null;
+        let currentUser = localStorage.getItem('mc_username') || null;
+        let erwinTriggered = false;
+
+        const mainAudio = document.getElementById('mainAudio');
         const loginAudio = document.getElementById('loginAudio');
         const rumblingAudio = document.getElementById('rumblingAudio');
+        const erwinAudio = document.getElementById('erwinAudio');
+
         const bgNormal = document.getElementById('bgGifNormal');
         const bgArmored = document.getElementById('bgGifArmored');
 
-        loginAudio.volume = 0.3;
-        rumblingAudio.volume = 0.3;
+        const volumeSlider = document.getElementById('globalVolume');
+        const volVal = document.getElementById('volVal');
 
-        /* ==================== نظام أصوات راقية وناعمة (High-End UI Clicks) ==================== */
+        function updateAudioVolumes() {
+            const masterVol = parseFloat(volumeSlider.value);
+            volVal.innerText = Math.round(masterVol * 100) + '%';
+
+            mainAudio.volume = masterVol; 
+            loginAudio.volume = masterVol * 0.3;     
+            rumblingAudio.volume = masterVol * 0.3;  
+            erwinAudio.volume = masterVol * 0.5;
+        }
+
+        volumeSlider.addEventListener('input', updateAudioVolumes);
+        updateAudioVolumes();
+
+        rumblingAudio.addEventListener('timeupdate', () => {
+            if (rumblingAudio.currentTime >= 30 && !erwinTriggered) {
+                erwinTriggered = true;
+                erwinAudio.currentTime = 0;
+                erwinAudio.play().catch(e => console.log(e));
+            }
+        });
+
         let audioCtx;
 
         function initAudioCtx() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
 
-        // صوت Hover ناعم جداً يشبه لمس الزجاج أو التمرير الخفيف (Soft Tech Tick)
         function playHoverSound() {
             try {
                 initAudioCtx();
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
-
                 osc.type = 'sine';
-                // تردد عالي وناعم يختفي بسرعة بلمح البصر
                 osc.frequency.setValueAtTime(1800, audioCtx.currentTime);
                 osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.025);
-
-                gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.04 * volumeSlider.value, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.025);
-
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
-
                 osc.start();
                 osc.stop(audioCtx.currentTime + 0.025);
             } catch (e) {}
         }
 
-        // صوت Click فخم وثقيل يشبه نقرة الماوس الاحترافية الراقية (Mechanical Click)
         function playClickSound() {
             try {
                 initAudioCtx();
-                
-                // طبقة الضربة الثقيلة (Low thump)
                 const osc1 = audioCtx.createOscillator();
                 const gain1 = audioCtx.createGain();
                 osc1.type = 'triangle';
                 osc1.frequency.setValueAtTime(320, audioCtx.currentTime);
                 osc1.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.05);
-                gain1.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain1.gain.setValueAtTime(0.15 * volumeSlider.value, audioCtx.currentTime);
                 gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-
-                // طبقة النقرة المعدنية الصافية (High snap)
-                const osc2 = audioCtx.createOscillator();
-                const gain2 = audioCtx.createGain();
-                osc2.type = 'sine';
-                osc2.frequency.setValueAtTime(2400, audioCtx.currentTime);
-                osc2.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.03);
-                gain2.gain.setValueAtTime(0.08, audioCtx.currentTime);
-                gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
-
                 osc1.connect(gain1);
                 gain1.connect(audioCtx.destination);
-                osc2.connect(gain2);
-                gain2.connect(audioCtx.destination);
-
                 osc1.start();
-                osc2.start();
                 osc1.stop(audioCtx.currentTime + 0.05);
-                osc2.stop(audioCtx.currentTime + 0.03);
             } catch (e) {}
         }
 
-        // ربط الأصوات بجميع الأزرار والروابط تلقائياً
         document.addEventListener('mouseover', (e) => {
-            if (e.target.closest('.btn, .launch-btn, a')) {
-                playHoverSound();
-            }
+            if (e.target.closest('.btn, .launch-btn, a')) playHoverSound();
         });
 
         document.addEventListener('click', (e) => {
-            if (e.target.closest('.btn, .launch-btn, a')) {
-                playClickSound();
-            }
+            if (e.target.closest('.btn, .launch-btn, a')) playClickSound();
         });
 
-        /* ==================== منطق التنقل والصفحات ==================== */
-
+        // تم التعديل: عند الضغط يتم دائماً نقل المستخدم إلى صفحة التسجيل
         function startAnalysisSystem() {
             document.getElementById('launchScreen').style.display = 'none';
+            document.getElementById('mainSection').style.display = 'none';
             document.getElementById('loginSection').style.display = 'block';
 
+            // ملء الحقل بالاسم القديم إن وجد لراحة المستخدم
+            if (currentUser) {
+                document.getElementById('usernameInput').value = currentUser;
+            }
+
+            mainAudio.play().catch(e => console.log(e));
             loginAudio.currentTime = 0;
             loginAudio.play().catch(e => console.log(e));
         }
@@ -430,12 +521,13 @@
 
         function showMainCategories() {
             document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('mainSection').style.display = 'block';
+            document.getElementById('mainSection').style.display = 'flex';
             document.getElementById('currentUserDisplay').innerText = currentUser;
 
             loginAudio.pause();
             loginAudio.currentTime = 0;
 
+            erwinTriggered = false;
             rumblingAudio.currentTime = 0;
             rumblingAudio.play().catch(e => console.log(e));
 
@@ -448,13 +540,19 @@
         function changeUsername() {
             localStorage.removeItem('mc_username');
             currentUser = null;
-            
+            document.getElementById('usernameInput').value = '';
             document.getElementById('mainSection').style.display = 'none';
             document.getElementById('launchScreen').style.display = 'flex';
-            
+
             rumblingAudio.pause();
             rumblingAudio.currentTime = 0;
-            
+
+            erwinAudio.pause();
+            erwinAudio.currentTime = 0;
+
+            mainAudio.pause();
+            mainAudio.currentTime = 0;
+
             bgArmored.classList.remove('active');
             bgNormal.classList.add('active');
         }
@@ -507,7 +605,6 @@
         async function createCategory() {
             const name = document.getElementById('catInput').value.trim();
             if (!name) return alert('Enter category name first!');
-
             try {
                 await fetch('/api/categories', {
                     method: 'POST',
@@ -523,7 +620,6 @@
 
         async function deleteCategory(catId) {
             if (!confirm('Are you sure you want to delete this category and all its mods?')) return;
-
             try {
                 await fetch('/api/categories/' + catId, { method: 'DELETE' });
                 loadCategories();
@@ -535,17 +631,12 @@
         async function uploadJar(catId) {
             const fileInput = document.getElementById(`file-${catId}`);
             if (!fileInput.files[0]) return alert('Select a JAR file first!');
-
             const formData = new FormData();
             formData.append('modfile', fileInput.files[0]);
             formData.append('category_id', catId);
             formData.append('username', currentUser);
-
             try {
-                await fetch('/api/upload-mod', {
-                    method: 'POST',
-                    body: formData
-                });
+                await fetch('/api/upload-mod', { method: 'POST', body: formData });
                 alert('File uploaded successfully!');
                 loadCategories();
             } catch (error) {
@@ -555,13 +646,57 @@
 
         async function deleteMod(modId) {
             if (!confirm('Are you sure you want to delete this mod?')) return;
-
             try {
                 await fetch('/api/mods/' + modId, { method: 'DELETE' });
                 loadCategories();
             } catch (error) {
                 alert('Failed to delete mod.');
             }
+        }
+
+        /* ==================== Real-Time Poker Socket Logic ==================== */
+        const socket = io();
+        let currentRoomId = null;
+
+        function findMatch() {
+            if (!currentUser) return alert('Please enter your username first!');
+            document.getElementById('matchStatus').innerText = 'Searching for opponent...';
+            socket.emit('find_match', { username: currentUser });
+        }
+
+        socket.on('match_found', (data) => {
+            currentRoomId = data.roomId;
+            document.getElementById('matchStatus').innerText = '';
+            document.getElementById('pokerBoard').style.display = 'block';
+            document.getElementById('oppNameDisplay').innerText = data.opponent;
+            document.getElementById('myChipsDisplay').innerText = data.chips;
+
+            const cardsContainer = document.getElementById('myCardsDisplay');
+            cardsContainer.innerHTML = data.myCards.map(c => `<div class="card-item">${c.value}${c.suit}</div>`).join('');
+        });
+
+        socket.on('game_update', (data) => {
+            document.getElementById('potAmount').innerText = data.pot;
+        });
+
+        socket.on('community_cards', (data) => {
+            const area = document.getElementById('communityCardsDisplay');
+            area.innerHTML = data.cards.map(c => `<div class="card-item">${c.value}${c.suit}</div>`).join('');
+        });
+
+        socket.on('game_over', (data) => {
+            alert('Game Over: ' + data.reason);
+            closePoker();
+        });
+
+        function sendPokerAction(action, amount = 0) {
+            if (!currentRoomId) return;
+            socket.emit('player_action', { roomId: currentRoomId, action, amount });
+        }
+
+        function closePoker() {
+            document.getElementById('pokerBoard').style.display = 'none';
+            currentRoomId = null;
         }
     </script>
 </body>
