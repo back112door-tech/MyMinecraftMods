@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Minecraft Mods Repository</title>
+
+    <!-- خطوط الـ System Terminal / Glitch -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Fira+Code:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #0b0707;
+            --card-bg: rgba(20, 12, 12, 0.88);
+            --flesh-tint: #d8b4a6;
+            --blood-red: #dc2626;
+            --blood-glow: rgba(220, 38, 38, 0.4);
+            --critical-red: #ef4444;
+            --text-main: #f1f5f9;
+            --text-muted: #9a8c88;
+            --font-term: 'Courier Prime', monospace;
+            --font-code: 'Fira Code', monospace;
+        }
+
+        body {
+            font-family: var(--font-term);
+            background-color: var(--bg-dark);
+            color: var(--flesh-tint);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            box-sizing: border-box;
+        }
+
+        /* خطوط الشاشة Scanlines */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.25),
+                rgba(0, 0, 0, 0.25) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 99;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: var(--font-term);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: -0.5px;
+            color: var(--blood-red);
+            text-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
+        }
+
+        /* خلفية الـ GIFs المنفصلة لتجنب التجميد */
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-gif {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            filter: contrast(130%) sepia(30%) hue-rotate(-15deg);
+        }
+
+        .bg-gif.active {
+            opacity: 0.28;
+        }
+
+        .bg-overlay::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(11, 7, 7, 0.2) 0%, rgba(11, 7, 7, 0.98) 85%);
+            z-index: 1;
+        }
+
+        /* شاشة الزر الأول عند دخول الموقع لأول مرة */
+        #launchScreen {
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(11, 7, 7, 0.85);
+            backdrop-filter: blur(10px);
+        }
+
+        .launch-btn {
+            background: rgba(220, 38, 38, 0.15);
+            color: var(--blood-red);
+            border: 2px solid var(--blood-red);
+            padding: 22px 45px;
+            font-size: 20px;
+            font-family: var(--font-term);
+            font-weight: 700;
+            letter-spacing: 3px;
+            cursor: pointer;
+            box-shadow: 0 0 30px var(--blood-glow);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .launch-btn:hover {
+            background: var(--blood-red);
+            color: #000;
+            box-shadow: 0 0 50px var(--blood-red);
+            transform: scale(1.05);
+        }
+
+        .container { max-width: 880px; margin: 0 auto; padding: 40px 20px 80px 20px; position: relative; z-index: 2; }
+        
+        .soft-card { 
+            background: var(--card-bg); 
+            backdrop-filter: blur(8px); 
+            border: 1px solid rgba(220, 38, 38, 0.3); 
+            border-left: 3px solid var(--blood-red);
+            border-radius: 2px; 
+            padding: 30px; 
+            margin-bottom: 25px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(220, 38, 38, 0.08); 
+            transition: all 0.2s ease; 
+        }
+
+        .soft-card:hover {
+            border-color: var(--blood-red);
+            box-shadow: 0 0 20px var(--blood-glow);
+        }
+
+        .login-box { 
+            text-align: center; 
+            max-width: 420px; 
+            margin: 80px auto 0 auto; 
+            animation: fadeInUp 0.6s ease-out; 
+            border: 1px solid var(--blood-red);
+            box-shadow: 0 0 25px var(--blood-glow);
+        }
+
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        input[type="text"] { 
+            background: rgba(5, 3, 3, 0.9); 
+            border: 1px solid rgba(220, 38, 38, 0.5); 
+            color: var(--flesh-tint); 
+            padding: 14px 18px; 
+            border-radius: 0px; 
+            outline: none; 
+            width: 100%; 
+            box-sizing: border-box; 
+            font-family: var(--font-code);
+            font-size: 14px;
+        }
+
+        input[type="text"]:focus { 
+            border-color: var(--blood-red); 
+            box-shadow: 0 0 12px var(--blood-glow); 
+        }
+
+        .btn { 
+            font-family: var(--font-term);
+            font-weight: 700;
+            padding: 12px 22px; 
+            border-radius: 0px; 
+            border: 1px solid transparent; 
+            font-size: 13px; 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 8px; 
+            text-transform: uppercase;
+        }
+
+        .btn-green { 
+            background: rgba(220, 38, 38, 0.2); 
+            color: var(--flesh-tint); 
+            border: 1px solid var(--blood-red);
+        }
+
+        .btn-green:hover {
+            background: var(--blood-red);
+            color: #000;
+            box-shadow: 0 0 15px var(--blood-glow);
+        }
+
+        .btn-blue { 
+            background: rgba(255, 255, 255, 0.05); 
+            color: var(--flesh-tint); 
+            border: 1px solid rgba(216, 180, 166, 0.4);
+            text-decoration: none; 
+        }
+
+        .btn-blue:hover {
+            background: var(--flesh-tint);
+            color: #000;
+        }
+
+        .btn-red { 
+            background: rgba(239, 68, 68, 0.15); 
+            color: var(--critical-red); 
+            border: 1px solid var(--critical-red); 
+        }
+
+        .btn-red:hover { 
+            background: var(--critical-red); 
+            color: #000; 
+            box-shadow: 0 0 15px var(--blood-glow);
+        }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 20px; }
+        .cat-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(220, 38, 38, 0.3); padding-bottom: 10px; }
+        
+        .mod-item { 
+            background: rgba(5, 3, 3, 0.8); 
+            border: 1px solid rgba(220, 38, 38, 0.2); 
+            padding: 12px 16px; 
+            border-radius: 0px; 
+            margin: 8px 0; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+
+        .user-tag { font-size: 11px; color: var(--text-muted); font-family: var(--font-term); }
+
+        .system-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(5, 3, 3, 0.95);
+            border-top: 1px solid var(--blood-red);
+            color: var(--text-muted);
+            font-size: 11px;
+            padding: 6px 15px;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- الصوت الأول: يعمل مرة واحدة فقط وبصوت منخفض -->
+    <audio id="loginAudio" preload="auto">
+        <source src="speech.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- الصوت الثاني: الخطاب عند الدخول -->
+    <audio id="rumblingAudio" preload="auto">
+        <source src="rumbling.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- شاشة البداية الأولى: زر ANALYSIS SYSTEM -->
+    <div id="launchScreen">
+        <button class="launch-btn" onclick="startAnalysisSystem()">&gt; ANALYSIS SYSTEM</button>
+    </div>
+
+    <!-- كروت الـ GIF المتحركة -->
+    <div class="bg-overlay">
+        <img id="bgGifNormal" class="bg-gif active" src="bg.gif" alt="bg">
+        <img id="bgGifArmored" class="bg-gif" src="armored.gif" alt="armored">
+    </div>
+
+    <div class="container">
+        
+        <!-- صفحة تسجيل الـ Username -->
+        <div id="loginSection" class="soft-card login-box" style="display: none;">
+            <h2 style="margin-top: 0; font-size: 32px;">&gt; Welcome</h2>
+            <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 12px;">Enter username to access mods repository</p>
+            <input type="text" id="usernameInput" placeholder="Enter username..." style="margin-bottom: 18px;">
+            <button class="btn btn-green" style="width: 100%;" onclick="saveUsername()">Enter Platform</button>
+        </div>
+
+        <!-- الصفحة الرئيسية (الكاتيجوريز والمودات) -->
+        <div id="mainSection" style="display: none;">
+            <div class="soft-card" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>&gt; SYSTEM USER: <b id="currentUserDisplay" style="color: var(--flesh-tint);"></b></div>
+                <button class="btn btn-red" style="font-size: 11px; padding: 6px 14px;" onclick="changeUsername()">Change User</button>
+            </div>
+
+            <div class="soft-card">
+                <h3 style="margin-top:0; font-size: 20px;">&gt; Create New Category</h3>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="catInput" placeholder="Category name...">
+                    <button class="btn btn-green" onclick="createCategory()">Create</button>
+                </div>
+            </div>
+
+            <h3 style="font-size: 22px; color: var(--flesh-tint); margin-bottom: 15px;">&gt; Available Categories</h3>
+            <div class="grid" id="categoriesArea"></div>
+        </div>
+
+    </div>
+
+    <div class="system-footer">
+        <span>&gt; [SYSTEM NOTICE]: Anomaly detected in system integrity</span>
+        <span>STATUS: RUNNING // 2026</span>
+    </div>
+
+    <script>
+        let currentUser = null;
+        const loginAudio = document.getElementById('loginAudio');
+        const rumblingAudio = document.getElementById('rumblingAudio');
+        const bgNormal = document.getElementById('bgGifNormal');
+        const bgArmored = document.getElementById('bgGifArmored');
+
+        loginAudio.volume = 0.3;
+        rumblingAudio.volume = 0.3;
+
+        /* ==================== نظام أصوات راقية وناعمة (High-End UI Clicks) ==================== */
+        let audioCtx;
+
+        function initAudioCtx() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // صوت Hover ناعم جداً يشبه لمس الزجاج أو التمرير الخفيف (Soft Tech Tick)
+        function playHoverSound() {
+            try {
+                initAudioCtx();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'sine';
+                // تردد عالي وناعم يختفي بسرعة بلمح البصر
+                osc.frequency.setValueAtTime(1800, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.025);
+
+                gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.025);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.025);
+            } catch (e) {}
+        }
+
+        // صوت Click فخم وثقيل يشبه نقرة الماوس الاحترافية الراقية (Mechanical Click)
+        function playClickSound() {
+            try {
+                initAudioCtx();
+                
+                // طبقة الضربة الثقيلة (Low thump)
+                const osc1 = audioCtx.createOscillator();
+                const gain1 = audioCtx.createGain();
+                osc1.type = 'triangle';
+                osc1.frequency.setValueAtTime(320, audioCtx.currentTime);
+                osc1.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.05);
+                gain1.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+
+                // طبقة النقرة المعدنية الصافية (High snap)
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(2400, audioCtx.currentTime);
+                osc2.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.03);
+                gain2.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+
+                osc1.connect(gain1);
+                gain1.connect(audioCtx.destination);
+                osc2.connect(gain2);
+                gain2.connect(audioCtx.destination);
+
+                osc1.start();
+                osc2.start();
+                osc1.stop(audioCtx.currentTime + 0.05);
+                osc2.stop(audioCtx.currentTime + 0.03);
+            } catch (e) {}
+        }
+
+        // ربط الأصوات بجميع الأزرار والروابط تلقائياً
+        document.addEventListener('mouseover', (e) => {
+            if (e.target.closest('.btn, .launch-btn, a')) {
+                playHoverSound();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.btn, .launch-btn, a')) {
+                playClickSound();
+            }
+        });
+
+        /* ==================== منطق التنقل والصفحات ==================== */
+
+        function startAnalysisSystem() {
+            document.getElementById('launchScreen').style.display = 'none';
+            document.getElementById('loginSection').style.display = 'block';
+
+            loginAudio.currentTime = 0;
+            loginAudio.play().catch(e => console.log(e));
+        }
+
+        function saveUsername() {
+            const val = document.getElementById('usernameInput').value.trim();
+            if (!val) return alert('Please enter username!');
+            localStorage.setItem('mc_username', val);
+            currentUser = val;
+            showMainCategories();
+        }
+
+        function showMainCategories() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('mainSection').style.display = 'block';
+            document.getElementById('currentUserDisplay').innerText = currentUser;
+
+            loginAudio.pause();
+            loginAudio.currentTime = 0;
+
+            rumblingAudio.currentTime = 0;
+            rumblingAudio.play().catch(e => console.log(e));
+
+            bgNormal.classList.remove('active');
+            bgArmored.classList.add('active');
+
+            loadCategories();
+        }
+
+        function changeUsername() {
+            localStorage.removeItem('mc_username');
+            currentUser = null;
+            
+            document.getElementById('mainSection').style.display = 'none';
+            document.getElementById('launchScreen').style.display = 'flex';
+            
+            rumblingAudio.pause();
+            rumblingAudio.currentTime = 0;
+            
+            bgArmored.classList.remove('active');
+            bgNormal.classList.add('active');
+        }
+
+        async function loadCategories() {
+            try {
+                const res = await fetch('/api/categories');
+                const categories = await res.json();
+                const area = document.getElementById('categoriesArea');
+                area.innerHTML = '';
+
+                for (let cat of categories) {
+                    const modsRes = await fetch('/api/mods/' + cat.id);
+                    const mods = await modsRes.json();
+
+                    let modsHTML = mods.map(m => `
+                        <div class="mod-item">
+                            <div>
+                                <div style="font-size:13px; font-weight:700; color:var(--flesh-tint);">${m.original_name}</div>
+                                <div class="user-tag">Uploaded by: ${m.uploaded_by}</div>
+                            </div>
+                            <div style="display:flex; gap:6px; align-items:center;">
+                                <a href="/download/${m.filename}" class="btn btn-blue" style="padding:5px 10px; font-size:10px;">Download</a>
+                                <button class="btn btn-red" style="padding:5px 10px; font-size:10px;" onclick="deleteMod(${m.id})">Delete</button>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    area.innerHTML += `
+                        <div class="soft-card">
+                            <div class="cat-header">
+                                <div>
+                                    <h3 style="margin:0; font-size:20px; color:var(--blood-red);">&gt; ${cat.name}</h3>
+                                    <div class="user-tag">Created by: ${cat.created_by}</div>
+                                </div>
+                                <button class="btn btn-red" style="padding:4px 8px; font-size:10px;" onclick="deleteCategory(${cat.id})">Delete Category</button>
+                            </div>
+                            <div style="margin-top:15px;">${modsHTML || '<span style="color:var(--text-muted); font-size:12px;">No JAR files found</span>'}</div>
+                            <hr style="border:none; border-top:1px dashed rgba(220, 38, 38, 0.3); margin: 15px 0;">
+                            <input type="file" id="file-${cat.id}" accept=".jar" style="width: 100%; margin-bottom: 10px; color:var(--text-muted); font-size:12px;">
+                            <button class="btn btn-green" style="width: 100%; font-size:11px;" onclick="uploadJar(${cat.id})">Upload JAR File</button>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading content:', error);
+            }
+        }
+
+        async function createCategory() {
+            const name = document.getElementById('catInput').value.trim();
+            if (!name) return alert('Enter category name first!');
+
+            try {
+                await fetch('/api/categories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, username: currentUser })
+                });
+                document.getElementById('catInput').value = '';
+                loadCategories();
+            } catch (error) {
+                alert('Failed to create category.');
+            }
+        }
+
+        async function deleteCategory(catId) {
+            if (!confirm('Are you sure you want to delete this category and all its mods?')) return;
+
+            try {
+                await fetch('/api/categories/' + catId, { method: 'DELETE' });
+                loadCategories();
+            } catch (error) {
+                alert('Failed to delete category.');
+            }
+        }
+
+        async function uploadJar(catId) {
+            const fileInput = document.getElementById(`file-${catId}`);
+            if (!fileInput.files[0]) return alert('Select a JAR file first!');
+
+            const formData = new FormData();
+            formData.append('modfile', fileInput.files[0]);
+            formData.append('category_id', catId);
+            formData.append('username', currentUser);
+
+            try {
+                await fetch('/api/upload-mod', {
+                    method: 'POST',
+                    body: formData
+                });
+                alert('File uploaded successfully!');
+                loadCategories();
+            } catch (error) {
+                alert('Failed to upload file.');
+            }
+        }
+
+        async function deleteMod(modId) {
+            if (!confirm('Are you sure you want to delete this mod?')) return;
+
+            try {
+                await fetch('/api/mods/' + modId, { method: 'DELETE' });
+                loadCategories();
+            } catch (error) {
+                alert('Failed to delete mod.');
+            }
+        }
+    </script>
+</body>
+</html>
