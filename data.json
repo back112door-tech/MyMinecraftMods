@@ -1,1 +1,18 @@
-{"categories":[],"mods":[]}
+{
+  "categories": [
+    {
+      "id": 1788806559106,
+      "name": "سسس",
+      "created_by": "sam"
+    }
+  ],
+  "mods": [
+    {
+      "id": 1788806567870,
+      "category_id": 1788806559106,
+      "filename": "1788806567836-617543030.jar",
+      "original_name": "infinity-2.7.2+1.21.1-fabric.jar",
+      "uploaded_by": "sam"
+    }
+  ]
+}

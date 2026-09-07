@@ -124,7 +124,6 @@
             transform: scale(1.05);
         }
 
-        /* الهيكل الداخلي لقسم الكاتيجوريز والميني جيمز */
         .layout-wrapper {
             display: flex;
             max-width: 1200px;
@@ -317,6 +316,7 @@
     <audio id="loginAudio" preload="auto"><source src="speech.mp3" type="audio/mpeg"></audio>
     <audio id="rumblingAudio" preload="auto"><source src="rumbling.mp3" type="audio/mpeg"></audio>
     <audio id="erwinAudio" preload="auto"><source src="erwin.mp3" type="audio/mpeg"></audio>
+    <audio id="globalVolumeAudio" preload="auto"><source src="globalVolume.mp3" type="audio/mpeg"></audio>
 
     <div class="volume-control-box">
         <span>VOL:</span>
@@ -419,6 +419,7 @@
         const loginAudio = document.getElementById('loginAudio');
         const rumblingAudio = document.getElementById('rumblingAudio');
         const erwinAudio = document.getElementById('erwinAudio');
+        const globalVolumeAudio = document.getElementById('globalVolumeAudio');
 
         const bgNormal = document.getElementById('bgGifNormal');
         const bgArmored = document.getElementById('bgGifArmored');
@@ -431,9 +432,10 @@
             volVal.innerText = Math.round(masterVol * 100) + '%';
 
             mainAudio.volume = masterVol; 
-            loginAudio.volume = masterVol * 0.3;     
+            loginAudio.volume = masterVol * 0.3;    
             rumblingAudio.volume = masterVol * 0.3;  
             erwinAudio.volume = masterVol * 0.5;
+            globalVolumeAudio.volume = masterVol; 
         }
 
         volumeSlider.addEventListener('input', updateAudioVolumes);
@@ -495,13 +497,11 @@
             if (e.target.closest('.btn, .launch-btn, a')) playClickSound();
         });
 
-        // تم التعديل: عند الضغط يتم دائماً نقل المستخدم إلى صفحة التسجيل
         function startAnalysisSystem() {
             document.getElementById('launchScreen').style.display = 'none';
             document.getElementById('mainSection').style.display = 'none';
             document.getElementById('loginSection').style.display = 'block';
 
-            // ملء الحقل بالاسم القديم إن وجد لراحة المستخدم
             if (currentUser) {
                 document.getElementById('usernameInput').value = currentUser;
             }

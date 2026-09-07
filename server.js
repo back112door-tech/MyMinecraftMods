@@ -3,18 +3,35 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
+const multer = require('multer');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// قواعد البيانات المحلية للكاتيجوريز والمودات
+// إعداد مجلد تخزين ملفات الـ JAR داخل public لسهولة التحميل
+const uploadDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadDir),
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+const upload = multer({ storage: storage });
+
+// قواعد البيانات المحلية للكاتيجوريز والمودات (data.json)
 const DATA_FILE = path.join(__dirname, 'data.json');
 if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify({ categories: [], mods: [] }));
+    fs.writeFileSync(DATA_FILE, JSON.stringify({ categories: [], mods: [] }, null, 2));
 }
 
 function readData() {
@@ -25,13 +42,16 @@ function writeData(data) {
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
-// مسارات الـ API للمودات
+// ==================== مسارات الـ API للكاتيجوريز والمودات وملفات الـ JAR ====================
+
 app.get('/api/categories', (req, res) => {
     res.json(readData().categories);
 });
 
 app.post('/api/categories', (req, res) => {
     const { name, username } = req.body;
+    if (!name) return res.status(400).json({ error: 'Category name is required' });
+    
     const data = readData();
     const newCat = { id: Date.now(), name, created_by: username || 'Anonymous' };
     data.categories.push(newCat);
@@ -41,7 +61,14 @@ app.post('/api/categories', (req, res) => {
 
 app.delete('/api/categories/:id', (req, res) => {
     const catId = parseInt(req.params.id);
-    const data = readData();
+    const data = readData(); // تم تصحيح الخطأ هنا
+
+    // حذف ملفات الـ JAR المرتبطة بالتصنيف من السيرفر
+    data.mods.filter(m => m.category_id === catId).forEach(mod => {
+        const filePath = path.join(uploadDir, mod.filename);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    });
+
     data.categories = data.categories.filter(c => c.id !== catId);
     data.mods = data.mods.filter(m => m.category_id !== catId);
     writeData(data);
@@ -53,6 +80,58 @@ app.get('/api/mods/:categoryId', (req, res) => {
     const mods = readData().mods.filter(m => m.category_id === catId);
     res.json(mods);
 });
+
+// رفع ملف JAR داخل التصنيف
+app.post('/api/upload-mod', upload.single('modfile'), (req, res) => {
+    const { category_id, username } = req.body;
+    const file = req.file;
+
+    if (!file || !category_id) {
+        return res.status(400).json({ error: 'Missing file or category ID' });
+    }
+
+    const data = readData();
+    const newMod = {
+        id: Date.now(),
+        category_id: parseInt(category_id),
+        filename: file.filename,
+        original_name: file.originalname,
+        uploaded_by: username || 'Anonymous'
+    };
+
+    data.mods.push(newMod);
+    writeData(data);
+    res.json({ success: true, mod: newMod });
+});
+
+// حذف ملف مود
+app.delete('/api/mods/:id', (req, res) => {
+    const modId = parseInt(req.params.id);
+    const data = readData();
+    const mod = data.mods.find(m => m.id === modId);
+
+    if (mod) {
+        const filePath = path.join(uploadDir, mod.filename);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
+
+    data.mods = data.mods.filter(m => m.id !== modId);
+    writeData(data);
+    res.json({ success: true });
+});
+
+// ==================== مسار التنزيل (Download Route) الجديد ====================
+app.get('/download/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join(uploadDir, filename);
+    
+    if (fs.existsSync(filePath)) {
+        res.download(filePath);
+    } else {
+        res.status(404).send('File not found on server.');
+    }
+});
+
 
 // ==================== منطق لعبة البوكر المتقدم (Texas Hold'em) ====================
 let waitingPlayer = null;
@@ -76,12 +155,10 @@ function evaluateHandValue(cards) {
     const valueOrder = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14 };
     const sorted = cards.map(c => valueOrder[c.value]).sort((a, b) => b - a);
     
-    // إحصاء التكرارات
     const counts = {};
     sorted.forEach(v => counts[v] = (counts[v] || 0) + 1);
     const countValues = Object.values(counts).sort((a, b) => b - a);
 
-    // حساب نقاط اليد أساساً
     let score = sorted[0] || 0; 
     if (countValues[0] === 4) score += 800;      // Four of a kind
     else if (countValues[0] === 3 && countValues[1] >= 2) score += 700; // Full House
@@ -96,7 +173,6 @@ function startNewHand(roomId) {
     const room = rooms[roomId];
     if (!room) return;
 
-    // فحص شروط الفوز/الخسارة النهائية
     for (let p of room.players) {
         if (p.chips <= 0) {
             const winner = room.players.find(x => x.id !== p.id);
@@ -114,17 +190,15 @@ function startNewHand(roomId) {
     room.deck = createDeck();
     room.pot = 0;
     room.communityCards = [];
-    room.stage = 'preflop'; // preflop, flop, turn, river, showdown
+    room.stage = 'preflop'; 
     room.currentTurn = 0;
 
-    // توزيع كارتين لكل لاعب
     room.players.forEach(p => {
         p.cards = [room.deck.pop(), room.deck.pop()];
         p.currentBet = 0;
         p.folded = false;
     });
 
-    // إرسال البيانات لكل لاعب
     room.players.forEach((p, index) => {
         const opp = room.players[1 - index];
         io.to(p.id).emit('match_found', {
@@ -196,13 +270,11 @@ function resolveShowdown(roomId) {
             p2Cards: p2.cards
         });
     } else {
-        // التعادل
         p1.chips += Math.floor(room.pot / 2);
         p2.chips += Math.floor(room.pot / 2);
         io.to(roomId).emit('round_result', { winner: 'TIE / SPLIT POT', pot: room.pot });
     }
 
-    // بدء جولة جديدة بعد 4 ثوانٍ
     setTimeout(() => {
         startNewHand(roomId);
     }, 4000);
@@ -234,7 +306,7 @@ io.on('connection', (socket) => {
         if (!room) return;
 
         const playerIndex = room.players.findIndex(p => p.id === socket.id);
-        if (playerIndex === -1 || playerIndex !== room.currentTurn) return; // ليس دوره
+        if (playerIndex === -1 || playerIndex !== room.currentTurn) return;
 
         const player = room.players[playerIndex];
 
@@ -252,10 +324,8 @@ io.on('connection', (socket) => {
             room.pot += callAmount;
         }
 
-        // التبديل للدور القادم
         room.currentTurn = 1 - room.currentTurn;
 
-        // إذا عاد الدور للاعب الأول يتم تطوير مرحلة اللعب (Flop -> Turn -> River)
         if (room.currentTurn === 0) {
             advanceStage(data.roomId);
         } else {
